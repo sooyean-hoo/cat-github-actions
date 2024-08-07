@@ -29,11 +29,26 @@ on:
         required: false
         default: 'echo'
         type: "string"
+      preinstallpecommands:  
+        description: "Additional Commands to install or config PE, running before the installation"
+        required: false
+        default: 'echo Before Install PE ;'
+        type: "string"
       installpecommands:  
         description: "Additional Commands to install or config PE, running after the installation"
         required: false
         default: 'echo Install PE done ;'
         type: "string"
+      deploy_petargetinv:
+        description: "Path to Inventory to use to run deploy_pe for PE installation. It must contain the target deploy_petarget."
+        required: false
+        default: 'inventory.yaml'
+        type: "string"        
+      deploy_petarget:
+        description: "Target to run run deploy_pe for PE installation"
+        required: false
+        default: 'localhost'
+        type: "string"        
       deploy_peversion:
         description: "P.E. version to install for deploy_pe"
         required: false
@@ -138,12 +153,17 @@ jobs:
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules module add puppetlabs-peadm
           sudo -E chmod a+rw ./inventory.yaml
 
+      - name: "Run Commands to Check or Cover Pre- PE Installation"
+        run: |
+          ${{ inputs.preinstallpecommands }}
+
       - name: install pe
         run: |
-          echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml
+          echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml 
+          [ -e "${{ inputs.deploy_petargetinv }}"  ] && cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml 
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
-          sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=localhost
-          [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=localhost version=${{ inputs.deploy_peversion }}
+          sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
+          [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }}
 
       - name: "Run Commands to Check or Cover Post PE Installation"
         run: |
