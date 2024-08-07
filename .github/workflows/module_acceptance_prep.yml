@@ -14,13 +14,23 @@ on:
         required: false
         default: ''
         type: "string"
+      prepcommand1:
+        description: "Additional PrepCommand to run as a preparation Part 1"
+        required: false
+        default: 'echo'
+        type: "string"
+      prepcommand2:
+        description: "Additional PrepCommand to run as a preparation Part 2"
+        required: false
+        default: 'echo'
+        type: "string"
       command:
-        description: "Additional Command to run as a preparation"
+        description: "Additional Command to run as a preparation/test/cleanup"
         required: false
         default: 'echo'
         type: "string"
       installpecommands:  
-        description: "Additional Commands to install or config PE"
+        description: "Additional Commands to install or config PE, running after the installation"
         required: false
         default: 'echo Install PE done ;'
         type: "string"
@@ -135,6 +145,14 @@ jobs:
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=localhost
           [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=localhost version=${{ inputs.deploy_peversion }}
           ${{ inputs.installpecommands }}
+
+      - name: "Run prepCommand Part 1"
+        run: |
+          ${{ inputs.prepcommand1 }}
+
+      - name: "Run prepCommand Part 2"
+        run: |
+          ${{ inputs.prepcommand2 }}
 
       - name: "Run Command"
         run: |
