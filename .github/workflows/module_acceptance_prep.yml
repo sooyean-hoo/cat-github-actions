@@ -159,12 +159,15 @@ jobs:
 
       - name: install pe
         run: |
-          echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml 
-          if [ -e "${{ inputs.deploy_petargetinv }}"  ] ; then cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml || echo "Same files cannot update." ; fi ;
+          if [ !  "${{ inputs.deploy_petargetinv }}" =  "inventory.yaml" -a -e "${{ inputs.deploy_petargetinv }}"  ] ; then 
+            cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml || echo "Same files cannot update." ;
+          elif [ -z "`grep -v '^[ ]*$'  ${{ inputs.deploy_petargetinv }}`" ] ; then 
+            echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml ;
+          fi ;
           grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
-          [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }}
+          [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }} || echo "==Install PE deploy_pe failed=="
 
       - name: "Run Commands to Check or Cover Post PE Installation aka installpecommands"
         run: |
