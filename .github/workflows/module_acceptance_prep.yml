@@ -144,6 +144,9 @@ jobs:
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=localhost
           [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=localhost version=${{ inputs.deploy_peversion }}
+
+      - name: "Run Commands to Check or Cover Post PE Installation"
+        run: |
           ${{ inputs.installpecommands }}
 
       - name: "Run prepCommand Part 1"
