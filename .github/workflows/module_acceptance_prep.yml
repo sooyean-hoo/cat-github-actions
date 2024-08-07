@@ -140,7 +140,7 @@ jobs:
 
       - name: install pe
         run: |
-          echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          role: pe' > inventory.yaml
+          echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=localhost
           [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=localhost version=${{ inputs.deploy_peversion }}
