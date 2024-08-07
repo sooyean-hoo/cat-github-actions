@@ -153,30 +153,31 @@ jobs:
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules module add puppetlabs-peadm
           sudo -E chmod a+rw ./inventory.yaml
 
-      - name: "Run Commands to Check or Cover Pre- PE Installation"
+      - name: "Run Commands to Check or Cover Pre- PE Installation aka preinstallpecommands"
         run: |
           ${{ inputs.preinstallpecommands }}
 
       - name: install pe
         run: |
           echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml 
-          [ -e "${{ inputs.deploy_petargetinv }}"  ] && cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml 
+          if [ -e "${{ inputs.deploy_petargetinv }}"  ] ; then cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml || echo "Same files cannot update." ; fi ;
+          grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
           [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }}
 
-      - name: "Run Commands to Check or Cover Post PE Installation"
+      - name: "Run Commands to Check or Cover Post PE Installation aka installpecommands"
         run: |
           ${{ inputs.installpecommands }}
 
-      - name: "Run prepCommand Part 1"
+      - name: "Run prepCommand Part 1 aka prepcommand1"
         run: |
           ${{ inputs.prepcommand1 }}
 
-      - name: "Run prepCommand Part 2"
+      - name: "Run prepCommand Part 2 aka prepcommand2"
         run: |
           ${{ inputs.prepcommand2 }}
 
-      - name: "Run Command"
+      - name: "Run Command aka command"
         run: |
           ${{ inputs.command }}
