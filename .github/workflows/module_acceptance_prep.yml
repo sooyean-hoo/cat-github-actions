@@ -59,7 +59,7 @@ on:
         required: false
         default: '-'
         type: "string"        
-      ospversion:
+      opensourcepuppetversion:
         description: "Open Source Puppet version to install, Default as empty to install Puppet Enterprise instead, and set 'L' for latest "
         required: false
         default: ''
@@ -153,7 +153,7 @@ jobs:
         run: |
           sudo -E mkdir -p  spec/fixtures/modules
           sudo -E echo ln -s spec/fixtures/modules .modules
-          sudo -E /usr/local/bin/bolt project init my_project --modules jarretlavallee-deploy_pe,puppetlabs-peadm
+          sudo -E /usr/local/bin/bolt project init my_project --modules jarretlavallee-deploy_pe,puppetlabs-peadm,aursu-puppet
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules module add jarretlavallee-deploy_pe
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules module add puppetlabs-peadm
           sudo -E chmod a+rw ./inventory.yaml
@@ -172,11 +172,12 @@ jobs:
           grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
-          if [ -z "${{    ospversion }}" ] ; then
+          echo "==opensourcepuppetversion=${{    inputs.opensourcepuppetversion }}" ;
+          if [ -z "${{    inputs.opensourcepuppetversion }}" ] ; then
             [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }} || echo "==Install PE deploy_pe failed==" ;
           else
             curl -q "https://raw.githubusercontent.com/sooyean-hoo/pe_curl_requests/feature/SYInstallerEnhance/installer/download_pe_tarball.sh"  > /tmp/download_pe_tarball.sh ;
-            ospversion="${{    ospversion }}"   source /tmp/download_pe_tarball.sh > /tmp/ops.log ;
+            opensourcepuppetversion="${{    inputs.opensourcepuppetversion }}"   source /tmp/download_pe_tarball.sh > /tmp/ops.log ;
             pkg2installOSpuppet=$( cat /tmp/ops.log | grep '====OPENSOURCEPUPPET=pkgurl=' | sed -E 's/====OPENSOURCEPUPPET=pkgurl=//' ) ;
             echo "Installing.....  ${pkg2installOSpuppet} " ;
             installPkg ${pkg2installOSpuppet} ;
