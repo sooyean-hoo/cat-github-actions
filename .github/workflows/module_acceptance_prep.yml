@@ -53,11 +53,16 @@ on:
         description: "P.E. version to install for deploy_pe"
         required: false
         default: '-'
-        type: "string"        
+        type: "string"
       peadm_peversion:
         description: "P.E. version to install for peadm"
         required: false
         default: '-'
+        type: "string"        
+      opensourcepuppetversion:
+        description: "Open Source Puppet version to install, Default as empty to install Puppet Enterprise instead, and set 'L' for latest "
+        required: false
+        default: ''
         type: "string"        
 
 
@@ -140,7 +145,7 @@ jobs:
           sudo -E dpkg -i puppet-tools-release-jammy.deb
           sudo -E apt-get update 
           sudo -E apt-get -y install puppet-bolt
-          sudo -E apt-get -y install curl
+          sudo -E apt-get -y install curl || sudo -E yum install -y curl || apt-get -y install curl || yum install -y curl
           sudo -E apt-get -y install cron
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
 
@@ -157,7 +162,7 @@ jobs:
         run: |
           ${{ inputs.preinstallpecommands }}
 
-      - name: install pe
+      - name: install pe or opensource puppet
         run: |
           if [ !  "${{ inputs.deploy_petargetinv }}" =  "inventory.yaml" -a -e "${{ inputs.deploy_petargetinv }}"  ] ; then 
             cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml || echo "Same files cannot update." ;
@@ -167,7 +172,15 @@ jobs:
           grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
-          [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }} || echo "==Install PE deploy_pe failed=="
+          if [ -z "${{    opensourcepuppetversion }}" ] ; then
+            [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }} || echo "==Install PE deploy_pe failed==" ;
+          else
+            curl -q "https://raw.githubusercontent.com/sooyean-hoo/pe_curl_requests/feature/SYInstallerEnhance/installer/download_pe_tarball.sh"  > /tmp/download_pe_tarball.sh ;
+            opensourcepuppetversion="${{    opensourcepuppetversion }}"   source /tmp/download_pe_tarball.sh > /tmp/ops.log ;
+            pkg2installOSpuppet=$( cat /tmp/ops.log | grep '====OPENSOURCEPUPPET=pkgurl=' | sed -E 's/====OPENSOURCEPUPPET=pkgurl=//' ) ;
+            echo "Installing.....  ${pkg2installOSpuppet} " ;
+            installPkg ${pkg2installOSpuppet} ;
+          fi ;
 
       - name: "Run Commands to Check or Cover Post PE Installation aka installpecommands"
         run: |
