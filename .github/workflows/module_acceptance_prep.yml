@@ -184,6 +184,24 @@ jobs:
             pkg2installOSpuppet=$( cat /tmp/ops.log | grep '====OPENSOURCEPUPPET=pkgurl=' | sed -E 's/====OPENSOURCEPUPPET=pkgurl=//' ) ;
             echo "Installing.....  ${pkg2installOSpuppet} " ;
             installPkg ${pkg2installOSpuppet} || echo ;
+            upgradePkg || echo ;
+            for p in  puppetserver puppet-agent ;  do
+              installPkg $p || installPkg $p --nobest --skip-broken || echo ;
+            done ;
+            puppet --help > /dev/null 2> /dev/null || {
+              tarfile=`ls -1 ./puppet*tar.gz | head -n 1` ;
+              tar -zvf  $tarfile ;
+              cd  ${tarfile/.tar.gz/} ;
+              onepkg=`find -iname 'puppet-agent*' | grep -E 'rpm|deb'| head -1 ` ;
+              cd `dirname ${onepkg}` ;
+              ext=${onepkg/*./}
+              sudocmd=`which sudo` || echo a ;
+              if [ "$ext" = "rpm"  ] ; then
+                ${sudocmd} rpm -i ./pe-puppetserver-* ./puppet-agent-*  ./pe-puppet-enterprise-release-*  ./pe-java*.rpm ./pe-bouncy-castle-jars-* ;
+              else
+                ${sudocmd} dpkg -i ./pe-puppetserver-* ./puppet-agent-*  ./pe-puppet-enterprise-release-*  ./pe-java* ./pe-bouncy-castle-jars-* ;
+              fi;
+            } || echo "Minimum Puppet Installation using Tar Failed" ;
           fi ;
 
       - name: "Run Commands to Check or Cover Post PE Installation aka installpecommands"
