@@ -164,20 +164,20 @@ jobs:
 
       - name: install pe or opensource puppet
         run: |
-          if [ !  "${{ inputs.deploy_petargetinv }}" =  "inventory.yaml" -a -e "${{ inputs.deploy_petargetinv }}"  ] ; then 
-            cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml || echo "Same files cannot update." ;
-          elif [ -z "`grep -v '^[ ]*$'  ${{ inputs.deploy_petargetinv }}`" ] ; then 
-            echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml ;
-          fi ;
-          grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
-          sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
-          sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
-          echo "==opensourcepuppetversion=${{    inputs.opensourcepuppetversion }}" ;
           if [ -z "${{    inputs.opensourcepuppetversion }}" ] ; then
+            if [ !  "${{ inputs.deploy_petargetinv }}" =  "inventory.yaml" -a -e "${{ inputs.deploy_petargetinv }}"  ] ; then 
+              cat  "${{ inputs.deploy_petargetinv }}"  > inventory.yaml || echo "Same files cannot update." ;
+            elif [ -z "`grep -v '^[ ]*$'  ${{ inputs.deploy_petargetinv }}`" ] ; then 
+              echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml ;
+            fi ;
+            grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
+            sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
+            sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
+            echo "==opensourcepuppetversion=${{    inputs.opensourcepuppetversion }}" ;
             [ "-" = "${{ inputs.deploy_peversion }}" ] || sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run deploy_pe::provision_master targets=${{ inputs.deploy_petarget }} version=${{ inputs.deploy_peversion }} || echo "==Install PE deploy_pe failed==" ;
           else
             curl -q "https://raw.githubusercontent.com/sooyean-hoo/pe_curl_requests/feature/SYInstallerEnhance/installer/download_pe_tarball.sh"  > /tmp/download_pe_tarball.sh ;
-            opensourcepuppetversion="${{    inputs.opensourcepuppetversion }}"   source /tmp/download_pe_tarball.sh > /tmp/ops.log ;
+            opensourcepuppetversion="${{    inputs.opensourcepuppetversion }}" opensourcepuppetversion_DISABLED="${opensourcepuppetversion}"  source /tmp/download_pe_tarball.sh > /tmp/ops.log ;
             pkg2installOSpuppet=$( cat /tmp/ops.log | grep '====OPENSOURCEPUPPET=pkgurl=' | sed -E 's/====OPENSOURCEPUPPET=pkgurl=//' ) ;
             echo "Installing.....  ${pkg2installOSpuppet} " ;
             installPkg ${pkg2installOSpuppet} ;
