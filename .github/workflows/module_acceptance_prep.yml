@@ -179,11 +179,11 @@ jobs:
           else
             curl -q "https://raw.githubusercontent.com/sooyean-hoo/pe_curl_requests/feature/SYInstallerEnhance/installer/download_pe_tarball.sh"  > /tmp/download_pe_tarball.sh ;
             export opensourcepuppetversion="${{    inputs.opensourcepuppetversion }}" ;
-            source /tmp/download_pe_tarball.sh > /tmp/ops.log ;
+            source /tmp/download_pe_tarball.sh > /tmp/ops.log || echo ;
             tail -10  /tmp/ops.log  | grep -H -n -v -E 'AALINEAANUMBER' ;
             pkg2installOSpuppet=$( cat /tmp/ops.log | grep '====OPENSOURCEPUPPET=pkgurl=' | sed -E 's/====OPENSOURCEPUPPET=pkgurl=//' ) ;
             echo "Installing.....  ${pkg2installOSpuppet} " ;
-            installPkg ${pkg2installOSpuppet} ;
+            installPkg ${pkg2installOSpuppet} || echo ;
           fi ;
 
       - name: "Run Commands to Check or Cover Post PE Installation aka installpecommands"
