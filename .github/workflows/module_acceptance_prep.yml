@@ -228,7 +228,9 @@ jobs:
           ${{ inputs.preinstallpecommands }}
 
       - name: install pe or opensource puppet
+        if: ${{ inputs.deploy_peversion != '-' || inputs.opensourcepuppetversion != ''    }}
         run: |
+          echo "==deploy_peversion=${{    inputs.deploy_peversion }}" ;
           echo "==opensourcepuppetversion=${{    inputs.opensourcepuppetversion }}" ;
           if [ -z "${{    inputs.opensourcepuppetversion }}" ] ; then
             if [ !  "${{ inputs.deploy_petargetinv }}" =  "inventory.yaml" -a -e "${{ inputs.deploy_petargetinv }}"  ] ; then 
