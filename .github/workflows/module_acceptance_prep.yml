@@ -14,6 +14,22 @@ on:
         required: false
         default: ''
         type: "string"
+      kernel_modules:
+        description: "Volume map host kernel /lib/modules into docker container"
+        default: true
+        type: boolean
+      disable_apparmor:
+        description: "Disable and stop apparmor"
+        default: false
+        type: boolean
+        
+        
+      continueintooriginalsteps:
+        description: "Continue the run into the Steps from the original module_acceptance"
+        required: false
+        default: false
+        type: boolean
+          
       prepcommand1:
         description: "Additional PrepCommand to run as a preparation Part 1"
         required: false
@@ -231,3 +247,41 @@ jobs:
       - name: "Run Command aka command"
         run: |
           ${{ inputs.command }}
+
+          
+# Same Steps from the module_acceptance
+      - name: "Provision environment"
+        if: ${{ inputs.continueintooriginalsteps }}
+        run: |
+          if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.platforms.provider}}" =~ docker* ]] ; then
+            DOCKER_RUN_OPTS="docker_run_opts: {'--volume': '/lib/modules/$(uname -r):/lib/modules/$(uname -r)'}"
+          else
+            DOCKER_RUN_OPTS=''
+          fi
+          bundle exec rake "litmus:provision[${{matrix.platforms.provider}},${{ matrix.platforms.image }},$DOCKER_RUN_OPTS]"
+          # Redact password
+          FILE='spec/fixtures/litmus_inventory.yaml'
+          sed -e 's/password: .*/password: "[redacted]"/' < $FILE || true
+
+      - name: "Install Puppet agent"
+        if: ${{ inputs.continueintooriginalsteps }}
+        run: |
+          bundle exec rake 'litmus:install_agent[${{ matrix.collection }}]'
+
+      - name: "Install module"
+        if: ${{ inputs.continueintooriginalsteps }}
+        run: |
+          bundle exec rake 'litmus:install_module'
+
+      - name: "Run acceptance tests"
+        if: ${{ inputs.continueintooriginalsteps }}
+        run: |
+          bundle exec rake 'litmus:acceptance:parallel'
+
+      - name: "Remove test environment"
+        if: ${{ inputs.continueintooriginalsteps }}
+        continue-on-error: true
+        run: |
+          if [[ -f spec/fixtures/litmus_inventory.yaml ]]; then
+            bundle exec rake 'litmus:tear_down'
+          fi
