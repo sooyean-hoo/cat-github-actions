@@ -236,7 +236,7 @@ jobs:
             elif [ -z "`grep -v '^[ ]*$'  ${{ inputs.deploy_petargetinv }}`" ] ; then 
               echo -e 'groups:\n  - name: pe\n    targets:\n      - uri: localhost\n        vars:\n          roles:\n            - pe' > inventory.yaml ;
             fi ;
-            grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
+            [ ! -e ./spec/fixtures/litmus_inventory.yaml ] || grep -H -n -v -E 'AALINEAANUMBER' ./spec/fixtures/litmus_inventory.yaml ;
             sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
             sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan run facts targets=${{ inputs.deploy_petarget }}
             
