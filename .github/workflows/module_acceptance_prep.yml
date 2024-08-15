@@ -312,7 +312,14 @@ jobs:
             else
               DOCKER_RUN_OPTS=''
             fi
-            [ -z "${{ inputs.provision_environment__task }}" ] || bundle exec rake "${{ inputs.provision_environment__task }}[${{matrix.platforms.provider}},${{ matrix.platforms.image }},$DOCKER_RUN_OPTS]" ;
+            if [ ! -z "${{ inputs.provision_environment__task }}" ] ; then
+               echo ===cat ${GITHUB_OUTPUT} ; ls -l ${GITHUB_OUTPUT}  ; cat ${GITHUB_OUTPUT} || echo "No file ${GITHUB_OUTPUT}";             
+               source ${GITHUB_OUTPUT} ; echo  $matrix ;
+               echo "============================";
+               platformsprovider="${{matrix.platforms.provider}}"
+               platformsimage="${{ matrix.platforms.image }}"
+               bundle exec rake "${{ inputs.provision_environment__task }}[${platformsprovider:-},${platformsimage:-},$DOCKER_RUN_OPTS]" ;
+            fi
           fi;
 
 
@@ -329,7 +336,6 @@ jobs:
       - name: "Run acceptance tests"
         if: ${{ inputs.continueintoproposedsteps }}
         run: |
-          bundle exec rake 'litmus:acceptance:parallel'
           [ -z "${{ inputs.acceptance__task }}" ] || bundle exec rake '${{ inputs.acceptance__task }}'
 
       - name: "Remove test environment"
