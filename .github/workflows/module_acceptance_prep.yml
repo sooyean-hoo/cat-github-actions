@@ -161,7 +161,7 @@ jobs:
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson( needs.setup_matrix.outputs.spec_matrix ) }}
+      matrix: ${{ fromJson( needs.setup_matrix.outputs.acceptance_matrix ) }}
 
     env:
       BUNDLE_WITHOUT: release_prep
