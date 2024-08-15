@@ -125,7 +125,7 @@ jobs:
     name: "Setup Test Matrix"
     runs-on: ${{ inputs.runs_on }}
     outputs:
-      acceptance_matrix: ${{ steps.get-matrix.outputs.matrix }}
+      acceptance_matrix: ${{ steps.get-matrix.outputs.spec_matrix }}
 
     env:
       BUNDLE_WITHOUT: release_prep
