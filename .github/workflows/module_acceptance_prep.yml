@@ -29,7 +29,46 @@ on:
         required: false
         default: false
         type: boolean
-          
+        
+        
+# Proposed Steps        
+      continueintoproposedsteps:
+        description: "Continue the run into the Steps from the proposed module_acceptance"
+        required: false
+        default: false
+        type: boolean
+      provision_environment__task:
+        description: "Rake Task to Provision the Environment"
+        required: false
+        default: ''
+        type: "string"
+        
+      install_agent__task:
+        description: "Rake Task to install the Agent"
+        required: false
+        default: ''
+        type: "string"
+
+      install_module__task:
+        description: "Rake Task to install the Modules"
+        required: false
+        default: ''
+        type: "string"
+
+      acceptance__task:
+        description: "Rake Task to Run the Acceptance Tests"
+        required: false
+        default: ''
+        type: "string"
+
+      tear_down__task:
+        description: "Rake Task to Run the Tear Down the test environments"
+        required: false
+        default: ''
+        type: "string"
+ 
+        
+ # Start of the Debugging Parameters         
       prepcommand1:
         description: "Additional PrepCommand to run as a preparation Part 1"
         required: false
@@ -248,7 +287,60 @@ jobs:
         run: |
           ${{ inputs.command }}
 
-          
+
+
+
+# Proposed Steps from the module_acceptance
+      - name: "Provision environment"
+        if: ${{ inputs.continueintoproposedsteps }}
+        run: |
+          if [ "${{ inputs.provision_environment__task }}" = "litmus:provision"  ] ; then
+            if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.platforms.provider}}" =~ docker* ]] ; then
+              DOCKER_RUN_OPTS="docker_run_opts: {'--volume': '/lib/modules/$(uname -r):/lib/modules/$(uname -r)'}"
+            else
+              DOCKER_RUN_OPTS=''
+            fi
+            bundle exec rake "litmus:provision[${{matrix.platforms.provider}},${{ matrix.platforms.image }},$DOCKER_RUN_OPTS]"
+            # Redact password
+            FILE='spec/fixtures/litmus_inventory.yaml'
+            sed -e 's/password: .*/password: "[redacted]"/' < $FILE || true
+          else
+            if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.platforms.provider}}" =~ docker* ]] ; then
+              DOCKER_RUN_OPTS="docker_run_opts: {'--volume': '/lib/modules/$(uname -r):/lib/modules/$(uname -r)'}"
+            else
+              DOCKER_RUN_OPTS=''
+            fi
+            [ -z "${{ inputs.provision_environment__task }}" ] || bundle exec rake "${{ inputs.provision_environment__task }}[${{matrix.platforms.provider}},${{ matrix.platforms.image }},$DOCKER_RUN_OPTS]" ;
+          fi;
+
+
+      - name: "Install Puppet agent"
+        if: ${{ inputs.continueintoproposedsteps }}
+        run: |
+          [ -z "${{ inputs.install_agent__task }}" ] || bundle exec rake '${{ inputs.install_agent__task }}[${{ matrix.collection }}]'
+
+      - name: "Install module"
+        if: ${{ inputs.continueintoproposedsteps }}
+        run: |
+          [ -z "${{ inputs.install_module__task }}" ] || bundle exec rake '${{ inputs.install_module__task }}'
+
+      - name: "Run acceptance tests"
+        if: ${{ inputs.continueintoproposedsteps }}
+        run: |
+          bundle exec rake 'litmus:acceptance:parallel'
+          [ -z "${{ inputs.acceptance__task }}" ] || bundle exec rake '${{ inputs.acceptance__task }}'
+
+      - name: "Remove test environment"
+        if: ${{ inputs.continueintoproposedsteps }}
+        continue-on-error: true
+        run: |
+          if [[ -f spec/fixtures/litmus_inventory.yaml ]]; then
+            [ -z "${{ inputs.tear_down__task }}" ] || bundle exec rake '${{ inputs.tear_down__task }}'
+          fi
+
+
+
+
 # Same Steps from the module_acceptance
       - name: "Provision environment"
         if: ${{ inputs.continueintooriginalsteps }}
