@@ -342,6 +342,8 @@ jobs:
             if [ ! -z "${{ inputs.provision_environment__task }}" ] ; then
                echo ===cat ${GITHUB_OUTPUT} ; ls -l ${GITHUB_OUTPUT}  ; cat ${GITHUB_OUTPUT} || echo "No file ${GITHUB_OUTPUT}";             
                source ${GITHUB_OUTPUT} ;  echo "from file: ${matrix}" ; echo  "inGitHub: ${{matrix}}" ;
+               echo  "spec_matrix: ${{ needs.setup_matrix.outputs.acceptance_matrix }}" ;
+               echo  "matrix: ${{ needs.setup_matrix.outputs.acceptance__matrix }}" ;
                echo "============================";
                platformsprovider="${{matrix.matrix.platforms.provider}}"
                platformsimage="${{ matrix.matrix.platforms.image }}"
