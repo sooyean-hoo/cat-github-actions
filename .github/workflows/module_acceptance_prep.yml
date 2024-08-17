@@ -86,7 +86,12 @@ on:
         default: 'echo'
         type: "string"
       command:
-        description: "Additional Command to run as a preparation/test/cleanup"
+        description: "Additional Command to run as a preparation/test"
+        required: false
+        default: 'echo'
+        type: "string"
+      postcommand:
+        description: "Additional Command to run as cleanup"
         required: false
         default: 'echo'
         type: "string"
@@ -306,6 +311,10 @@ jobs:
         run: |
           ${{ inputs.command }}
 
+      - name: "Run Commands after the command aka postcommand"
+        if: ${{ inputs.continuewithownsetupsteps }}      
+        run: |
+          ${{ inputs.postcommand }}
 
 
 
