@@ -22,6 +22,12 @@ on:
         description: "Disable and stop apparmor"
         default: false
         type: boolean
+
+      continuewithownsetupsteps:
+        description: "Running Extra Setup Steps module_acceptance"
+        required: false
+        default: true
+        type: boolean
         
         
       continueintooriginalsteps:
@@ -125,7 +131,7 @@ jobs:
     name: "Setup Test Matrix"
     runs-on: ${{ inputs.runs_on }}
     outputs:
-      acceptance_matrix: ${{ steps.get-matrix.outputs.spec_matrix }}
+      acceptance_matrix: ${{ steps.get-matrix.outputs.matrix }}
 
     env:
       BUNDLE_WITHOUT: release_prep
@@ -197,14 +203,17 @@ jobs:
           echo ::endgroup::
           
       - name: modify sudo settings
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           sudo sed -i 's/Defaults env_reset//' /etc/sudoers
 
       - name: Create the fixtures directory
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           bundle exec rake spec_prep
           
       - name: install actual bolt
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           wget https://apt.puppet.com/puppet-tools-release-jammy.deb
           sudo -E dpkg -i puppet-tools-release-jammy.deb
@@ -215,6 +224,7 @@ jobs:
           sudo -E /usr/local/bin/bolt --modulepath spec/fixtures/modules plan show
 
       - name: install bolt modules
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           sudo -E mkdir -p  spec/fixtures/modules
           sudo -E echo ln -s spec/fixtures/modules .modules
@@ -224,11 +234,12 @@ jobs:
           sudo -E chmod a+rw ./inventory.yaml
 
       - name: "Run Commands to Check or Cover Pre- PE Installation aka preinstallpecommands"
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           ${{ inputs.preinstallpecommands }}
 
       - name: install pe or opensource puppet
-        if: ${{ inputs.deploy_peversion != '-' || inputs.opensourcepuppetversion != ''    }}
+        if: ${{ inputs.continuewithownsetupsteps && ( inputs.deploy_peversion != '-' || inputs.opensourcepuppetversion != '' )   }}
         run: |
           echo "==deploy_peversion=${{    inputs.deploy_peversion }}" ;
           echo "==opensourcepuppetversion=${{    inputs.opensourcepuppetversion }}" ;
@@ -274,18 +285,22 @@ jobs:
           fi ;
 
       - name: "Run Commands to Check or Cover Post PE Installation aka installpecommands"
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           ${{ inputs.installpecommands }}
 
       - name: "Run prepCommand Part 1 aka prepcommand1"
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           ${{ inputs.prepcommand1 }}
 
       - name: "Run prepCommand Part 2 aka prepcommand2"
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           ${{ inputs.prepcommand2 }}
 
       - name: "Run Command aka command"
+        if: ${{ inputs.continuewithownsetupsteps }}      
         run: |
           ${{ inputs.command }}
 
