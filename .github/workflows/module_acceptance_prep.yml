@@ -161,7 +161,7 @@ jobs:
           bundle exec matrix_from_metadata_v2 ${{ inputs.flags }}
 
   acceptance:
-    name: "Acceptance tests (${{matrix.platforms.label}}, ${{matrix.collection}})"
+    name: "Acceptance tests (${{matrix.platforms.label}}, ${{matrix.collection}}) -  puppet:${{ spec_matrix.puppet_version }} ruby:${{spec_matrix.ruby_version}}"
     needs: "setup_matrix"
     runs-on: ${{ inputs.runs_on }}
     timeout-minutes: 180
@@ -171,7 +171,7 @@ jobs:
 
     env:
       BUNDLE_WITHOUT: release_prep
-      PUPPET_GEM_VERSION: ${{ matrix.puppet_version }}
+      PUPPET_GEM_VERSION: ${{ spec_matrix.puppet_version }}
       FACTER_GEM_VERSION: 'https://github.com/puppetlabs/facter#main'  # why is this set?
 
     steps:
@@ -193,7 +193,7 @@ jobs:
       - name: "Setup ruby"
         uses: "ruby/setup-ruby@v1"
         with:
-          ruby-version: ${{matrix.ruby_version}}
+          ruby-version: ${{spec_matrix.ruby_version}}
           bundler-cache: true
 
       - name: "Bundle environment"
