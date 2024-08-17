@@ -131,7 +131,8 @@ jobs:
     name: "Setup Test Matrix"
     runs-on: ${{ inputs.runs_on }}
     outputs:
-      acceptance_matrix: ${{ steps.get-matrix.outputs.matrix }}
+      acceptance_matrix: ${{ steps.get-matrix.outputs.spec_matrix }}
+      #acceptance_spec_matrix: ${{ steps.get-matrix.outputs.spec_matrix }}
 
     env:
       BUNDLE_WITHOUT: release_prep
@@ -161,17 +162,18 @@ jobs:
           bundle exec matrix_from_metadata_v2 ${{ inputs.flags }}
 
   acceptance:
-    name: "Acceptance tests (${{matrix.platforms.label}}, ${{matrix.collection}}) -  puppet:${{ spec_matrix.puppet_version }} ruby:${{spec_matrix.ruby_version}}"
+    name: "Acceptance tests (${{matrix.platforms.label}}, ${{matrix.collection}}) -  puppet:${{ matrix.puppet_version }} ruby:${{matrix.ruby_version}}"
     needs: "setup_matrix"
     runs-on: ${{ inputs.runs_on }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix: ${{ fromJson( needs.setup_matrix.outputs.acceptance_matrix ) }}
+      #spec_matrix: ${{ fromJson( needs.setup_matrix.outputs.acceptance_spec_matrix ) }}
 
     env:
       BUNDLE_WITHOUT: release_prep
-      PUPPET_GEM_VERSION: ${{ spec_matrix.puppet_version }}
+      PUPPET_GEM_VERSION: ${{ matrix.puppet_version }}
       FACTER_GEM_VERSION: 'https://github.com/puppetlabs/facter#main'  # why is this set?
 
     steps:
@@ -193,7 +195,7 @@ jobs:
       - name: "Setup ruby"
         uses: "ruby/setup-ruby@v1"
         with:
-          ruby-version: ${{spec_matrix.ruby_version}}
+          ruby-version: ${{matrix.ruby_version}}
           bundler-cache: true
 
       - name: "Bundle environment"
