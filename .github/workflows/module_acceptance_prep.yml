@@ -341,7 +341,7 @@ jobs:
             fi
             if [ ! -z "${{ inputs.provision_environment__task }}" ] ; then
                echo ===cat ${GITHUB_OUTPUT} ; ls -l ${GITHUB_OUTPUT}  ; cat ${GITHUB_OUTPUT} || echo "No file ${GITHUB_OUTPUT}";             
-               source ${GITHUB_OUTPUT} ; echo  "${{matrix}}" ;
+               source ${GITHUB_OUTPUT} ;  echo "from file: ${matrix}" ; echo  "inGitHub: ${{matrix}}" ;
                echo "============================";
                platformsprovider="${{matrix.matrix.platforms.provider}}"
                platformsimage="${{ matrix.matrix.platforms.image }}"
