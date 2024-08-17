@@ -138,6 +138,9 @@ jobs:
     outputs:
       acceptance_matrix: ${{ steps.get-matrix.outputs.spec_matrix }}
       acceptance__matrix: ${{ steps.get-matrix.outputs.matrix }}
+      ruby_version:  ${{ steps.get-puppet_ruby_version.outputs.ruby_version }}
+      puppet_version: ${{ steps.get-puppet_ruby_version.outputs.puppet_version }}
+      
 
     env:
       BUNDLE_WITHOUT: release_prep
@@ -166,20 +169,25 @@ jobs:
         run: |
           bundle exec matrix_from_metadata_v2 ${{ inputs.flags }}
 
+      - name: Setup Ruby Version and Setup Puppet Version
+        id: get-puppet_ruby_version
+        run: |
+          echo ${{ toJSON(steps.get-matrix.outputs.spec_matrix ) }} | jq -r '.include | .[0] | to_entries[] | "\(.key)=\(.value)"'  >> $GITHUB_OUTPUT
+
   acceptance:
-    name: "Acceptance tests (${{matrix.matrix.platforms.label}}, ${{matrix.matrix.collection}}) -  puppet:${{ matrix.puppet_version }} ruby:${{matrix.ruby_version}}"
+    name: "Acceptance tests (${{matrix.platforms.label}}, ${{matrix.collection}}) - ruby: ${{needs.setup_matrix.outputs.ruby_version}} puppet: ${{needs.setup_matrix.outputs.puppet_version}} "
     needs: "setup_matrix"
     runs-on: ${{ inputs.runs_on }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson( needs.setup_matrix.outputs.acceptance_matrix ) }}
+      matrix: ${{ fromJson( needs.setup_matrix.outputs.acceptance__matrix ) }}
         # matrix: ${{ fromJson( needs.setup_matrix.outputs.acceptance_matrix ) }}
         # spec_matrix: ${{ fromJson( needs.setup_matrix.outputs.acceptance__matrix ) }}
 
     env:
       BUNDLE_WITHOUT: release_prep
-      PUPPET_GEM_VERSION: ${{ matrix.puppet_version }}
+      PUPPET_GEM_VERSION: ${{needs.setup_matrix.outputs.puppet_version}}
       FACTER_GEM_VERSION: 'https://github.com/puppetlabs/facter#main'  # why is this set?
 
     steps:
@@ -201,7 +209,7 @@ jobs:
       - name: "Setup ruby"
         uses: "ruby/setup-ruby@v1"
         with:
-          ruby-version: ${{matrix.ruby_version}}
+          ruby-version: ${{needs.setup_matrix.outputs.ruby_version}}
           bundler-cache: true
 
       - name: "Bundle environment"
@@ -324,17 +332,17 @@ jobs:
         if: ${{ inputs.continueintoproposedsteps }}
         run: |
           if [ "${{ inputs.provision_environment__task }}" = "litmus:provision"  ] ; then
-            if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.matrix.platforms.provider}}" =~ docker* ]] ; then
+            if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.platforms.provider}}" =~ docker* ]] ; then
               DOCKER_RUN_OPTS="docker_run_opts: {'--volume': '/lib/modules/$(uname -r):/lib/modules/$(uname -r)'}"
             else
               DOCKER_RUN_OPTS=''
             fi
-            bundle exec rake "litmus:provision[${{matrix.matrix.platforms.provider}},${{ matrix.matrix.platforms.image }},$DOCKER_RUN_OPTS]"
+            bundle exec rake "litmus:provision[${{matrix.platforms.provider}},${{ matrix.platforms.image }},$DOCKER_RUN_OPTS]"
             # Redact password
             FILE='spec/fixtures/litmus_inventory.yaml'
             sed -e 's/password: .*/password: "[redacted]"/' < $FILE || true
           else
-            if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.matrix.platforms.provider}}" =~ docker* ]] ; then
+            if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.platforms.provider}}" =~ docker* ]] ; then
               DOCKER_RUN_OPTS="docker_run_opts: {'--volume': '/lib/modules/$(uname -r):/lib/modules/$(uname -r)'}"
             else
               DOCKER_RUN_OPTS=''
@@ -345,8 +353,8 @@ jobs:
                echo  "spec_matrix: ${{ needs.setup_matrix.outputs.acceptance_matrix }}" ;
                echo  "matrix: ${{ needs.setup_matrix.outputs.acceptance__matrix }}" ;
                echo "============================";
-               platformsprovider="${{matrix.matrix.platforms.provider}}"
-               platformsimage="${{ matrix.matrix.platforms.image }}"
+               platformsprovider="${{matrix.platforms.provider}}"
+               platformsimage="${{ matrix.platforms.image }}"
                bundle exec rake "${{ inputs.provision_environment__task }}[${platformsprovider:-},${platformsimage:-},$DOCKER_RUN_OPTS]" ;
             fi
           fi;
@@ -355,7 +363,7 @@ jobs:
       - name: "Install Puppet agent"
         if: ${{ inputs.continueintoproposedsteps }}
         run: |
-          [ -z "${{ inputs.install_agent__task }}" ] || bundle exec rake '${{ inputs.install_agent__task }}[${{ matrix.matrix.collection }}]'
+          [ -z "${{ inputs.install_agent__task }}" ] || bundle exec rake '${{ inputs.install_agent__task }}[${{ matrix.collection }}]'
 
       - name: "Install module"
         if: ${{ inputs.continueintoproposedsteps }}
@@ -382,12 +390,12 @@ jobs:
       - name: "Provision environment"
         if: ${{ inputs.continueintooriginalsteps }}
         run: |
-          if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.matrix.platforms.provider}}" =~ docker* ]] ; then
+          if [[ "${{ inputs.kernel_modules }}" == "true" ]] && [[ "${{matrix.platforms.provider}}" =~ docker* ]] ; then
             DOCKER_RUN_OPTS="docker_run_opts: {'--volume': '/lib/modules/$(uname -r):/lib/modules/$(uname -r)'}"
           else
             DOCKER_RUN_OPTS=''
           fi
-          bundle exec rake "litmus:provision[${{matrix.matrix.platforms.provider}},${{ matrix.matrix.platforms.image }},$DOCKER_RUN_OPTS]"
+          bundle exec rake "litmus:provision[${{matrix.platforms.provider}},${{ matrix.platforms.image }},$DOCKER_RUN_OPTS]"
           # Redact password
           FILE='spec/fixtures/litmus_inventory.yaml'
           sed -e 's/password: .*/password: "[redacted]"/' < $FILE || true
@@ -395,7 +403,7 @@ jobs:
       - name: "Install Puppet agent"
         if: ${{ inputs.continueintooriginalsteps }}
         run: |
-          bundle exec rake 'litmus:install_agent[${{ matrix.matrix.collection }}]'
+          bundle exec rake 'litmus:install_agent[${{ matrix.collection }}]'
 
       - name: "Install module"
         if: ${{ inputs.continueintooriginalsteps }}
