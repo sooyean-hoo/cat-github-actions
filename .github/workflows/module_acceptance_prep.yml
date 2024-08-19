@@ -138,7 +138,7 @@ jobs:
     outputs:
       acceptance_matrix: ${{ steps.get-matrix.outputs.spec_matrix }}
       acceptance__matrix: ${{ steps.get-matrix.outputs.matrix }}
-      ruby_version:  ${{ steps.get-puppet_ruby_version.outputs.ruby_version }}
+      ruby_version: ${{ steps.get-puppet_ruby_version.outputs.ruby_version }}
       puppet_version: ${{ steps.get-puppet_ruby_version.outputs.puppet_version }}
       
 
