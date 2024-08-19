@@ -42,6 +42,11 @@ on:
         description: 'Task for the step "Remove test environment"'
         default: 'litmus:tear_down'
         type: "string"
+      matrix_from_metadata:
+        description: 'Commands to run to get the test matrix'
+        default: 'matrix_from_metadata_v2'
+        type: "string"
+        
 
 jobs:
 
@@ -78,7 +83,7 @@ jobs:
       - name: Setup Test Matrix
         id: get-matrix
         run: |
-          bundle exec matrix_from_metadata_v2 ${{ inputs.flags }}
+          bundle exec ${{ inputs.matrix_from_metadata }} ${{ inputs.flags }}
 
       - name: Setup Ruby Version and Setup Puppet Version
         id: get-puppet_ruby_version
