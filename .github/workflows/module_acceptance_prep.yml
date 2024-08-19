@@ -1,4 +1,4 @@
-# This is a generic workflow for Puppet module CI operations.
+# This is a generic workflow for Puppet module acceptance operations.
 name: "Module Acceptance Prep"
 
 on:
