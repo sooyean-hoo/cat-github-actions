@@ -72,7 +72,7 @@ on:
         required: false
         default: ''
         type: "string"
-       matrix_from_metadata:
+      matrix_from_metadata:
         description: 'Commands to run to get the test matrix'
         default: 'matrix_from_metadata_v2'
         type: "string"
