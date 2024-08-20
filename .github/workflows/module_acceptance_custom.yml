@@ -46,7 +46,7 @@ on:
         description: 'Commands to run to get the test matrix'
         default: 'matrix_from_metadata_v2'
         type: "string"
-        
+
 
 jobs:
 
